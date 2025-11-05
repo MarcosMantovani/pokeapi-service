@@ -1,7 +1,4 @@
 import os
-import base64
-import mimetypes
-from typing import List, Dict
 
 from common.utils import make_api_request
 
@@ -22,195 +19,78 @@ class PokeApiService:
             url=self.base_url + endpoint,
             payload=payload,
             params=params,
-            headers=self.headers,
-            log_prefix="Clicksign API",
+            log_prefix="PokeAPI",
         )
         return data
 
-    def create_envelope(self, name: str):
-        payload = {
-            "data": {
-                "type": "envelopes",
-                "attributes": {
-                    "name": name,
-                    "locale": "pt-BR",
-                    "auto_close": True,
-                    "remind_interval": 1,
-                    "block_after_refusal": False,
-                },
-            }
-        }
-        endpoint = "/envelopes"
-        return self.make_request(endpoint, "post", payload)
+    def get_pokemon(self, name_or_id: str | int):
+        endpoint = f"/pokemon/{name_or_id}"
+        return self.make_request(endpoint, "get")
 
-    def create_document(self, envelope_id: str, file_path: str):
-        # Lê o arquivo e converte para base64
-        with open(file_path, "rb") as file:
-            file_content = file.read()
+    def get_pokemon_list(self, limit: int = 20, offset: int = 0):
+        endpoint = f"/pokemon?limit={limit}&offset={offset}"
+        return self.make_request(endpoint, "get")
 
-        # Detecta o mimetype do arquivo
-        mimetype, _ = mimetypes.guess_type(file_path)
-        if not mimetype:
-            mimetype = "application/octet-stream"
+    def get_pokemon_specie(self, id: int):
+        endpoint = f"/pokemon-species/{id}"
+        return self.make_request(endpoint, "get")
 
-        # Codifica em base64 e formata com o mimetype
-        file_base64 = base64.b64encode(file_content).decode("utf-8")
-        content_base64 = f"data:{mimetype};base64,{file_base64}"
+    def get_pokemon_species_list(self, limit: int = 20, offset: int = 0):
+        endpoint = f"/pokemon-species?limit={limit}&offset={offset}"
+        return self.make_request(endpoint, "get")
 
-        # Extrai apenas o nome do arquivo
-        filename = os.path.basename(file_path)
+    def get_evolution_chain(self, id: int):
+        endpoint = f"/evolution-chain/{id}"
+        return self.make_request(endpoint, "get")
 
-        payload = {
-            "data": {
-                "type": "documents",
-                "attributes": {
-                    "filename": filename,
-                    "content_base64": content_base64,
-                },
-            }
-        }
-        endpoint = f"/envelopes/{envelope_id}/documents"
-        return self.make_request(endpoint, "post", payload)
+    def get_evolution_chains_list(self, limit: int = 20, offset: int = 0):
+        endpoint = f"/evolution-chain?limit={limit}&offset={offset}"
+        return self.make_request(endpoint, "get")
 
-    def create_signer(
-        self, envelope_id: str, name: str, email: str, phone_number: str, cpf: str
-    ):
-        payload = {
-            "data": {
-                "type": "signers",
-                "attributes": {
-                    "name": name,
-                    "email": email,
-                    "phone_number": phone_number,
-                    "has_documentation": True,
-                    "documentation": cpf,
-                    "location_required_enabled": False,
-                    "communicate_events": {
-                        "signature_request": "whatsapp",
-                        "signature_reminder": "email",
-                        "document_signed": "whatsapp",
-                    },
-                },
-            }
-        }
-        endpoint = f"/envelopes/{envelope_id}/signers"
-        return self.make_request(endpoint, "post", payload)
+    def get_pokemon_type(self, name_or_id: str | int):
+        endpoint = f"/type/{name_or_id}"
+        return self.make_request(endpoint, "get")
 
-    def create_qualification_requirement(
-        self, envelope_id: str, document_id: str, signer_id: str
-    ):
-        payload = {
-            "data": {
-                "type": "requirements",
-                "attributes": {"action": "agree", "role": "contractor"},
-                "relationships": {
-                    "document": {
-                        "data": {
-                            "type": "documents",
-                            "id": document_id,
-                        }
-                    },
-                    "signer": {
-                        "data": {
-                            "type": "signers",
-                            "id": signer_id,
-                        }
-                    },
-                },
-            }
-        }
-        endpoint = f"/envelopes/{envelope_id}/requirements"
-        return self.make_request(endpoint, "post", payload)
+    def get_pokemon_types_list(self, limit: int = 20, offset: int = 0):
+        endpoint = f"/type?limit={limit}&offset={offset}"
+        return self.make_request(endpoint, "get")
 
-    def create_authentication_requirement(
-        self, envelope_id: str, document_id: str, signer_id: str
-    ):
-        payload = {
-            "data": {
-                "type": "requirements",
-                "attributes": {"action": "provide_evidence", "auth": "whatsapp"},
-                "relationships": {
-                    "document": {
-                        "data": {
-                            "type": "documents",
-                            "id": document_id,
-                        }
-                    },
-                    "signer": {
-                        "data": {
-                            "type": "signers",
-                            "id": signer_id,
-                        }
-                    },
-                },
-            }
-        }
-        endpoint = f"/envelopes/{envelope_id}/requirements"
-        return self.make_request(endpoint, "post", payload)
+    def get_pokemon_move(self, name_or_id: str | int):
+        endpoint = f"/move/{name_or_id}"
+        return self.make_request(endpoint, "get")
 
-    def activate_envelope(self, envelope_id: str):
-        payload = {
-            "data": {
-                "type": "envelopes",
-                "id": envelope_id,
-                "attributes": {"status": "running"},
-            }
-        }
-        endpoint = f"/envelopes/{envelope_id}"
-        return self.make_request(endpoint, "patch", payload)
+    def get_pokemon_moves_list(self, limit: int = 20, offset: int = 0):
+        endpoint = f"/move?limit={limit}&offset={offset}"
+        return self.make_request(endpoint, "get")
 
-    def notify_signers(self, envelope_id: str):
-        payload = {"data": {"type": "notifications", "attributes": {"message": None}}}
-        endpoint = f"/envelopes/{envelope_id}/notifications"
-        return self.make_request(endpoint, "post", payload)
+    def get_item(self, name_or_id: str | int):
+        endpoint = f"/item/{name_or_id}"
+        return self.make_request(endpoint, "get")
 
-    def send_contract_via_whatsapp(
-        self, name: str, contract_path: str, signers: List[Dict]
-    ):
-        """
-        Envia contrato via WhatsApp usando a Clicksign.
-        Args:
-            name: Nome do contrato
-            contract_path: Caminho do arquivo do contrato
-            signers: Lista de signers com os seguintes campos:
-                - name: Nome do signer
-                - email: Email do signer
-                - phone_number: Número de telefone do signer
-                - cpf: CPF do signer
-        Returns:
-            envelope_id: ID do envelope
-        """
-        envelope = self.create_envelope(name=name)
-        envelope_id = envelope["data"]["id"]
+    def get_items_list(self, limit: int = 20, offset: int = 0):
+        endpoint = f"/item?limit={limit}&offset={offset}"
+        return self.make_request(endpoint, "get")
 
-        document = self.create_document(
-            envelope_id=envelope_id, file_path=contract_path
-        )
-        document_id = document["data"]["id"]
+    def get_ability(self, name_or_id: str | int):
+        endpoint = f"/ability/{name_or_id}"
+        return self.make_request(endpoint, "get")
 
-        signer_ids = []
-        for signer in signers:
-            signer = self.create_signer(
-                envelope_id=envelope_id,
-                name=signer["name"],
-                email=signer["email"],
-                phone_number=signer["phone_number"],
-                cpf=signer["cpf"],
-            )
-            signer_ids.append(signer["data"]["id"])
+    def get_abilities_list(self, limit: int = 20, offset: int = 0):
+        endpoint = f"/ability?limit={limit}&offset={offset}"
+        return self.make_request(endpoint, "get")
 
-        for signer_id in signer_ids:
-            self.create_qualification_requirement(
-                envelope_id=envelope_id,
-                document_id=document_id,
-                signer_id=signer_id,
-            )
-            self.create_authentication_requirement(
-                envelope_id=envelope_id,
-                document_id=document_id,
-                signer_id=signer_id,
-            )
+    def get_generation(self, id: int):
+        endpoint = f"/generation/{id}"
+        return self.make_request(endpoint, "get")
 
-        self.activate_envelope(envelope_id=envelope_id)
-        self.notify_signers(envelope_id=envelope_id)
-        return envelope_id
+    def get_generations_list(self, limit: int = 20, offset: int = 0):
+        endpoint = f"/generation?limit={limit}&offset={offset}"
+        return self.make_request(endpoint, "get")
+
+    def get_location(self, name_or_id: str | int):
+        endpoint = f"/location/{name_or_id}"
+        return self.make_request(endpoint, "get")
+
+    def get_locations_list(self, limit: int = 20, offset: int = 0):
+        endpoint = f"/location?limit={limit}&offset={offset}"
+        return self.make_request(endpoint, "get")
