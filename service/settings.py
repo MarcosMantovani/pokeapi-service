@@ -479,8 +479,8 @@ REST_FRAMEWORK = {
 
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "Zeinbot - Bot API",
-    "DESCRIPTION": "Zeinbot - Bot API",
+    "TITLE": "Pokeapi",
+    "DESCRIPTION": "Pokeapi",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": True,
     "SWAGGER_UI_SETTINGS": {
