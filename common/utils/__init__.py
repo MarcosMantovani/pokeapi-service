@@ -26,6 +26,7 @@ from .text import (
 from .requests import (
     retry_on_failure,
     url_to_buffer,
+    make_api_request,
 )
 
 # Image processing
@@ -55,6 +56,7 @@ from .task import (
     release_lock,
 )
 
+
 # Manter todas as funções disponíveis no namespace principal
 __all__ = [
     # Base
@@ -75,6 +77,7 @@ __all__ = [
     # Requests
     "retry_on_failure",
     "url_to_buffer",
+    "make_api_request",
     # Image
     "extract_text_from_image",
     "_looks_like_document",
