@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 from common.models import AbstractDatableModel
+from users.models import User
 
 
 class AbstractPokeApiModel(AbstractDatableModel):
@@ -66,6 +67,15 @@ class Pokemon(AbstractPokeApiModel):
             "shiny": official_artwork.get("front_shiny"),
         }
 
+    @property
+    def flavor_text(self) -> str:
+        """
+        Returns the English flavor text from the related specie.
+        """
+        if hasattr(self, "specie") and self.specie:
+            return self.specie.flavor_text
+        return ""
+
     class Meta:
         verbose_name = "Pokemon"
         verbose_name_plural = "Pokemons"
@@ -75,6 +85,19 @@ class PokemonSpecie(AbstractPokeApiModel):
     pokemon = models.OneToOneField(
         Pokemon, on_delete=models.CASCADE, related_name="specie"
     )
+
+    @property
+    def flavor_text(self) -> str:
+        """
+        Returns the English flavor text (summary) of the Pokemon specie.
+        """
+        entries = self.data.get("flavor_text_entries", [])
+        for entry in entries:
+            if entry.get("language", {}).get("name") == "en":
+                return (
+                    entry.get("flavor_text", "").replace("\n", " ").replace("\f", " ")
+                )
+        return ""
 
     def __str__(self):
         return f"{self.name} Specie"
@@ -111,3 +134,20 @@ class PokemonEvolutionChain(AbstractPokeApiModel):
         verbose_name = "Pokemon Evolution Chain"
         verbose_name_plural = "Pokemon Evolution Chains"
         ordering = ["external_id"]
+
+
+class FavoritedPokemon(AbstractDatableModel):
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="favorited_pokemons"
+    )
+    pokemon = models.ForeignKey(
+        Pokemon, on_delete=models.CASCADE, related_name="favorited_pokemons"
+    )
+
+    def __str__(self):
+        return f"{self.user.username} favorited {self.pokemon.name}"
+
+    class Meta:
+        verbose_name = "Favorited Pokemon"
+        verbose_name_plural = "Favorited Pokemons"
+        ordering = ["user", "pokemon"]

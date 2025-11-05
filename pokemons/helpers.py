@@ -1,8 +1,15 @@
 from datetime import timedelta
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.db import models, transaction
 
-from pokemons.models import Pokemon, PokemonSpecie, PokemonEvolutionChain
+from users.models import User
+from pokemons.models import (
+    Pokemon,
+    PokemonSpecie,
+    PokemonEvolutionChain,
+    FavoritedPokemon,
+)
 from pokemons.services import PokeApiService
 
 
@@ -89,6 +96,21 @@ class PokemonHelper(BasePokeApiHelper):
         pokemon = super().get_object(name_or_id)
         PokemonSpecieHelper.get_object(name_or_id, pokemon=pokemon)
         return pokemon
+
+    @staticmethod
+    def favorite_pokemon(user: User, pokemon: Pokemon):
+        already_favorited = FavoritedPokemon.objects.filter(
+            user=user, pokemon=pokemon
+        ).exists()
+        if already_favorited:
+            raise ValidationError("Pokemon already favorited")
+        FavoritedPokemon.objects.create(user=user, pokemon=pokemon)
+        return pokemon
+
+    @staticmethod
+    def unfavorite_pokemon(user: User, pokemon: Pokemon):
+        FavoritedPokemon.objects.filter(user=user, pokemon=pokemon).delete()
+        return True
 
 
 class PokemonSpecieHelper(BasePokeApiHelper):

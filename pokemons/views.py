@@ -1,15 +1,36 @@
 from urllib.parse import urlparse, parse_qs
 from rest_framework.response import Response
-from rest_framework import status, viewsets
+from rest_framework import status, viewsets, permissions
+from rest_framework.decorators import action
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.exceptions import NotFound
 from pokemons.helpers import PokemonHelper
 from pokemons.services import PokeApiService
-from pokemons.models import Pokemon
+from pokemons.models import Pokemon, FavoritedPokemon
 from pokemons.serializers import PokemonSerializer
 
 
 class PokemonViewSet(viewsets.ModelViewSet):
     queryset = Pokemon.objects.all()
     serializer_class = PokemonSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        """
+        Override to fetch Pokemon by 'name' or 'external_id'
+        instead of the internal database id.
+        """
+        identifier = self.kwargs.get("pk")
+
+        if identifier.isdigit():
+            identifier = int(identifier)
+
+        try:
+            pokemon = PokemonHelper.get_object(identifier)
+        except Exception:
+            raise NotFound(f"Pokemon '{identifier}' not found or could not be fetched.")
+
+        return pokemon
 
     def list(self, request, *args, **kwargs):
         """
@@ -79,3 +100,46 @@ class PokemonViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(pokemon)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["post"])
+    def favorite(self, request, *args, **kwargs):
+        pokemon = self.get_object()
+        serializer = self.get_serializer(pokemon)
+        serializer.favorite(request.user, pokemon)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["post"])
+    def unfavorite(self, request, *args, **kwargs):
+        pokemon = self.get_object()
+        serializer = self.get_serializer(pokemon)
+        serializer.unfavorite(request.user, pokemon)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class FavoritedPokemonPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = "limit"
+    page_query_param = "page"
+
+
+class FavoritedPokemonViewSet(viewsets.ViewSet):
+    """
+    Returns the favorited Pokémon of the authenticated user
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def list(self, request):
+        user = request.user
+        favorites_qs = FavoritedPokemon.objects.filter(user=user).select_related(
+            "pokemon"
+        )
+
+        paginator = FavoritedPokemonPagination()
+        page = paginator.paginate_queryset(favorites_qs, request)
+        pokemons = [fav.pokemon for fav in page] if page else []
+
+        serializer = PokemonSerializer(
+            pokemons, many=True, context={"request": request}
+        )
+        return paginator.get_paginated_response(serializer.data)
