@@ -104,13 +104,6 @@ WORKDIR /pokeapi
 COPY --chown=pokeapi:pokeapi . /pokeapi/
 RUN rm -rf /pokeapi/static
 
-# DEBUG: List all files to see what was copied
-RUN echo "=== DEBUG: Files in /pokeapi ==="
-RUN ls -la /pokeapi/
-RUN echo "=== DEBUG: Looking for .sh files ==="
-RUN find /pokeapi/ -name "*.sh" -type f || echo "No .sh files found"
-RUN echo "=== DEBUG: Current directory contents ==="
-RUN pwd && ls -la
 
 # Make scripts executable (if they exist)
 RUN if [ -f /pokeapi/start-service-dev.sh ]; then chmod +x /pokeapi/start-service-dev.sh; else echo "start-service-dev.sh NOT FOUND"; fi
