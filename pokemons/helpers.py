@@ -110,7 +110,7 @@ class PokemonHelper(BasePokeApiHelper):
     @staticmethod
     def unfavorite_pokemon(user: User, pokemon: Pokemon):
         FavoritedPokemon.objects.filter(user=user, pokemon=pokemon).delete()
-        return True
+        return pokemon
 
 
 class PokemonSpecieHelper(BasePokeApiHelper):

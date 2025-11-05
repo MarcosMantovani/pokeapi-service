@@ -112,8 +112,8 @@ class PokemonViewSet(viewsets.ModelViewSet):
     def unfavorite(self, request, *args, **kwargs):
         pokemon = self.get_object()
         serializer = self.get_serializer(pokemon)
-        serializer.unfavorite(request.user, pokemon)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        pokemon = serializer.unfavorite(request.user, pokemon)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class FavoritedPokemonPagination(PageNumberPagination):

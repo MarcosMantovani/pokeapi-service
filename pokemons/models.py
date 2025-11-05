@@ -76,6 +76,9 @@ class Pokemon(AbstractPokeApiModel):
             return self.specie.flavor_text
         return ""
 
+    def is_favorited(self, user: User) -> bool:
+        return FavoritedPokemon.objects.filter(user=user, pokemon=self).exists()
+
     class Meta:
         verbose_name = "Pokemon"
         verbose_name_plural = "Pokemons"

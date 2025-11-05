@@ -6,6 +6,11 @@ from pokemons.helpers import PokemonHelper
 
 class PokemonSerializer(serializers.ModelSerializer):
 
+    is_favorited = serializers.SerializerMethodField()
+
+    def get_is_favorited(self, obj: Pokemon) -> bool:
+        return obj.is_favorited(self.context["request"].user)
+
     def favorite(self, user: User, pokemon: Pokemon):
         return PokemonHelper.favorite_pokemon(user, pokemon)
 
@@ -25,4 +30,5 @@ class PokemonSerializer(serializers.ModelSerializer):
             "weight",
             "types",
             "cry",
+            "is_favorited",
         ]
