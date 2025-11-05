@@ -1,3 +1,4 @@
+from urllib.parse import urlparse, parse_qs
 from rest_framework.response import Response
 from rest_framework import status, viewsets
 from pokemons.helpers import PokemonHelper
@@ -31,14 +32,25 @@ class PokemonViewSet(viewsets.ModelViewSet):
             pokemon = PokemonHelper.get_object(name)
             results.append(pokemon)
 
-        # serialize the local Pokémon objects
+        # serialize local Pokémon objects
         serializer = self.get_serializer(results, many=True)
+
+        # utility function to convert PokeAPI URLs to local URLs
+        def convert_url(external_url):
+            if not external_url:
+                return None
+            parsed = urlparse(external_url)
+            params = parse_qs(parsed.query)
+            next_limit = params.get("limit", [limit])[0]
+            next_offset = params.get("offset", [offset])[0]
+            base_url = request.build_absolute_uri(request.path)
+            return f"{base_url}?limit={next_limit}&offset={next_offset}"
 
         return Response(
             {
                 "count": api_response.get("count"),
-                "next": api_response.get("next"),
-                "previous": api_response.get("previous"),
+                "next": convert_url(api_response.get("next")),
+                "previous": convert_url(api_response.get("previous")),
                 "results": serializer.data,
             },
             status=status.HTTP_200_OK,
