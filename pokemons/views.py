@@ -55,3 +55,27 @@ class PokemonViewSet(viewsets.ModelViewSet):
             },
             status=status.HTTP_200_OK,
         )
+
+    def retrieve(self, request, *args, **kwargs):
+        """
+        Overrides default retrieve to use the PokemonHelper,
+        fetching data by name or external_id instead of the local database id.
+        """
+        identifier = kwargs.get("pk")
+
+        # Allow either numeric external_id or string name
+        if identifier.isdigit():
+            identifier = int(identifier)
+
+        try:
+            pokemon = PokemonHelper.get_object(identifier)
+        except Exception:
+            return Response(
+                {
+                    "detail": f"Pokémon '{identifier}' not found or could not be fetched."
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = self.get_serializer(pokemon)
+        return Response(serializer.data, status=status.HTTP_200_OK)
