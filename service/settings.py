@@ -126,6 +126,7 @@ INSTALLED_APPS = [
     "authentication",
     "users",
     "autogfk",
+    "pokemons",
 ]
 
 MIDDLEWARE = [

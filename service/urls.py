@@ -32,6 +32,7 @@ urlpatterns = [
     path("martor/", include("martor.urls")),
     path("api/auth/", include("authentication.urls", namespace="authentication")),
     path("api/users/", include("users.urls", namespace="users")),
+    path("api/pokemons/", include("pokemons.urls", namespace="pokemons")),
     # API Schema Documentation
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(
