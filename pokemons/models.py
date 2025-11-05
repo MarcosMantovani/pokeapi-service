@@ -133,12 +133,13 @@ class PokemonEvolutionChain(AbstractPokeApiModel):
         """
         Builds the representation of the chain node.
         """
+        from pokemons.helpers import PokemonHelper
         from pokemons.serializers import PokemonSerializer
 
         species_name = node["species"]["name"]
-        pokemon = Pokemon.objects.filter(name=species_name).first()
+        pokemon = PokemonHelper.get_object(species_name)
         if not pokemon:
-            return {}
+            return None
 
         # Serializes the Pokemon
         pokemon_data = PokemonSerializer(pokemon, context=context).data
@@ -177,13 +178,13 @@ class PokemonEvolutionChain(AbstractPokeApiModel):
 
         parts = []
         if trigger == "level-up" and min_level:
-            parts.append(f"evolve ao subir para nível {min_level}")
+            parts.append(f"evolui ao subir para nível {min_level}")
         elif trigger == "trade":
-            parts.append("evolve ao trocar com outro jogador")
+            parts.append("evolui ao trocar com outro jogador")
         elif trigger == "use-item" and item:
-            parts.append(f"evolve usando {item.get('name')}")
+            parts.append(f"evolui usando {item.get('name')}")
         else:
-            parts.append(f"evolve via {trigger}")
+            parts.append(f"evolui via {trigger}")
 
         if gender is not None:
             parts.append(f"se for do gênero {gender}")

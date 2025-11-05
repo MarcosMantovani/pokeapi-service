@@ -310,7 +310,6 @@ STATICFILES_DIRS = [
 # for static, use default storage
 STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
 
-CANONICAL_URL = os.getenv("CANONICAL_URL")
 
 DEBUG_TOOLBAR_PATCH_SETTINGS = DEBUG
 
@@ -567,7 +566,6 @@ LANGUAGES = [
 
 
 EVOLUTION_URL = os.getenv("SERVER_URL")
-SERVICE_URL = os.getenv("SERVICE_BASE_URL")
 AUTHENTICATION_API_KEY = os.getenv("AUTHENTICATION_API_KEY")
 
 
