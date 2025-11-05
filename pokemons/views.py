@@ -6,7 +6,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.exceptions import NotFound
 from pokemons.helpers import PokemonHelper
 from pokemons.services import PokeApiService
-from pokemons.models import Pokemon, FavoritedPokemon
+from pokemons.models import Pokemon, FavoritedPokemon, PokemonEvolutionChain
 from pokemons.serializers import PokemonSerializer
 
 
@@ -114,6 +114,39 @@ class PokemonViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(pokemon)
         pokemon = serializer.unfavorite(request.user, pokemon)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class PokemonEvolutionChainViewSet(viewsets.ViewSet):
+    """
+    Retrieve the evolution chain of a given Pokémon.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def retrieve(self, request, pk=None):
+        """
+        Fetch the evolution chain for a Pokémon by its name or external_id.
+        """
+        if pk is None:
+            raise NotFound("Pokémon identifier is required.")
+
+        # Resolve Pokémon by name or external_id
+        try:
+            pokemon = PokemonHelper.get_object(pk)
+        except Exception:
+            raise NotFound(f"Pokémon '{pk}' not found.")
+
+        # Find the evolution chain related to this Pokémon
+        chain_qs = PokemonEvolutionChain.objects.filter(pokemons=pokemon)
+        if not chain_qs.exists():
+            return Response(
+                {"detail": "Evolution chain not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        chain = chain_qs.first()
+        # structured_chain property formats it for the frontend
+        return Response(chain.structured_chain(request.user), status=status.HTTP_200_OK)
 
 
 class FavoritedPokemonPagination(PageNumberPagination):

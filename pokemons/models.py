@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from typing import Dict, Any
 from common.models import AbstractDatableModel
 from users.models import User
 
@@ -126,9 +127,76 @@ class PokemonEvolutionChain(AbstractPokeApiModel):
         blank=True,
     )
 
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        # optional logic to sync pokemons/species can go here
+    def _parse_chain_node(
+        self, node: Dict[str, Any], context: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Builds the representation of the chain node.
+        """
+        from pokemons.serializers import PokemonSerializer
+
+        species_name = node["species"]["name"]
+        pokemon = Pokemon.objects.filter(name=species_name).first()
+        if not pokemon:
+            return {}
+
+        # Serializes the Pokemon
+        pokemon_data = PokemonSerializer(pokemon, context=context).data
+
+        # Interprets evolution_details
+        details = node.get("evolution_details", [])
+        if details:
+            # For simplicity, we will take the first detail
+            detail = details[0]
+            evolution_text = self._build_evolution_text(detail)
+        else:
+            evolution_text = None
+
+        # Processes future evolutions
+        evolves = node.get("evolves_to", [])
+        evolves_to = (
+            [self._parse_chain_node(e, context) for e in evolves] if evolves else []
+        )
+
+        return {
+            "pokemon": pokemon_data,
+            "evolution_text": evolution_text,
+            "evolves_to": evolves_to,
+        }
+
+    def _build_evolution_text(self, detail: Dict[str, Any]) -> str:
+        """
+        Interprets the evolution details and returns a friendly text.
+        """
+        trigger = detail.get("trigger", {}).get("name", "")
+        min_level = detail.get("min_level")
+        item = detail.get("item")
+        gender = detail.get("gender")
+        time_of_day = detail.get("time_of_day")
+        # Add more fields if you want to detail more
+
+        parts = []
+        if trigger == "level-up" and min_level:
+            parts.append(f"evolve ao subir para nível {min_level}")
+        elif trigger == "trade":
+            parts.append("evolve ao trocar com outro jogador")
+        elif trigger == "use-item" and item:
+            parts.append(f"evolve usando {item.get('name')}")
+        else:
+            parts.append(f"evolve via {trigger}")
+
+        if gender is not None:
+            parts.append(f"se for do gênero {gender}")
+        if time_of_day:
+            parts.append(f"durante {time_of_day}")
+
+        return ", ".join(parts)
+
+    def structured_chain(self, user: User) -> Dict[str, Any]:
+        """
+        Returns the structured evolution chain for the frontend.
+        """
+        return self._parse_chain_node(self.data["chain"], context={"user": user})
 
     def __str__(self):
         return f"{self.name} Evolution Chain"
